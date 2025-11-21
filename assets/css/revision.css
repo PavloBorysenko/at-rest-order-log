@@ -1,5 +1,7 @@
 .at-rest-order-revisions-wrapper {
     margin: 0;
+    max-height: 500px;
+    overflow: auto;
 }
 
 .at-rest-revisions-container {

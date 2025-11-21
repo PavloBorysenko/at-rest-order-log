@@ -65,8 +65,8 @@ class OrdersTableColumn {
     }
 
     private function displayRevisionInfo(\WC_Order $order) {
-        $revisions = $this->revision_manager->getAllOrderRevisions($order);
-        $count = count($revisions);
+
+        $count = $this->revision_manager->getRevisionCount( $order->get_id() );
 
         if ($count > 0) {
             echo '<span class="order-revisions-badge" style="

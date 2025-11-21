@@ -8,43 +8,16 @@ class OrderUpdateHandler {
     public function __construct(OrderRevisionManager $order_manager) {
         $this->order_manager = $order_manager;
         
-        // Hook for old format (CPT)
         add_action( 'woocommerce_process_shop_order_meta', [$this, 'createRevisionBeforeUpdate'], 1, 2 );
-        
-        // Hook for HPOS (new format)
-        add_action( 'woocommerce_before_order_object_save', [$this, 'createRevisionBeforeOrderSave'], 1, 2 );
-        
-        // Hook for saving order items
-        add_action( 'woocommerce_before_save_order_items', [$this, 'createRevisionBeforeItemsSave'], 1, 2 );
     }
 
     public function createRevisionBeforeUpdate( $order_id, $post = null ) {
-        if ( ! $this->isCreateRevisionAllowed( $order_id ) ) {
+    
+        
+        if ( ! $this->isUpdateButtonClicked( $order_id ) ) {
             return;
         }
 
-        $this->processRevision( $order_id );
-    }
-    
-    public function createRevisionBeforeOrderSave( $order, $data_store ) {
-        if ( ! $order || ! $order->get_id() ) {
-            return;
-        }
-        
-        $order_id = $order->get_id();
-        
-        if ( ! $this->isBasicRevisionAllowed( $order_id ) ) {
-            return;
-        }
-        
-        $this->processRevision( $order_id );
-    }
-    
-    public function createRevisionBeforeItemsSave( $order_id, $items ) {
-        if ( ! $this->isBasicRevisionAllowed( $order_id ) ) {
-            return;
-        }
-        
         $this->processRevision( $order_id );
     }
 
@@ -71,12 +44,13 @@ class OrderUpdateHandler {
             return;
         }
     
+
         $processed_orders[ $order_id ] = true;
         
         $this->order_manager->createOrderRevision( $order_id, $old_order );
     }
 
-    private function isCreateRevisionAllowed( $order_id ) : bool {
+    private function isUpdateButtonClicked( $order_id ) : bool {
         if ( ! $order_id ) {
             return false;
         }
@@ -85,12 +59,19 @@ class OrderUpdateHandler {
             return false;
         }
     
-        // Commented out to allow AJAX requests
-        // if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-        //     return false; 
-        // }
+        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+            return false;
+        }
     
         if ( wp_is_post_revision( $order_id ) || wp_is_post_autosave( $order_id ) ) {
+            return false;
+        }
+    
+        if ( ! current_user_can( 'edit_post', $order_id ) ) {
+            return false;
+        }
+    
+        if ( isset($_GET['action']) && $_GET['action'] === 'atrest_resend_invoice_pdf' ) {
             return false;
         }
     
@@ -100,40 +81,18 @@ class OrderUpdateHandler {
     
         $action = sanitize_text_field( wp_unslash( $_POST['action'] ) );
         
-        $allowed_actions = ['edit_order', 'editpost', 'woocommerce_save_order_items'];
-        
-        if ( ! in_array( $action, $allowed_actions, true ) ) {
+        if ( $action !== 'edit_order' ) {
             return false;
         }
     
-        if ( ! isset( $_POST['_wpnonce'] ) ) {
+        if ( ! isset( $_POST['_wpnonce'] ) || ! isset( $_POST['post_ID'] ) ) {
             return false;
         }
     
-        if ( ! current_user_can( 'edit_post', $order_id ) ) {
-            return false;
-        }
-
-        return true;
-    }
-    
-    private function isBasicRevisionAllowed( $order_id ) : bool {
-        if ( ! $order_id ) {
+        if ( (int) $_POST['post_ID'] !== $order_id ) {
             return false;
         }
     
-        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-            return false;
-        }
-    
-        if ( wp_is_post_revision( $order_id ) || wp_is_post_autosave( $order_id ) ) {
-            return false;
-        }
-    
-        if ( ! current_user_can( 'edit_post', $order_id ) ) {
-            return false;
-        }
-
         return true;
     }
 }

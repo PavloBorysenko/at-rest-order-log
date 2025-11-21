@@ -2,36 +2,41 @@
     <div class="at-rest-revisions-container">
         <?php
         foreach ( $revisions as $revision ) :
-            $timestamp = $revision['timestamp'];
-            $data = $revision['data'];
+            $revision_id = $revision['id'];
+            $user_id = $revision['user_id'];
+            $order_status = $revision['order_status'];
+            $data = $revision['revision_data'];
+            $created_at = $revision['created_at'];
+            
+            $timestamp = strtotime($created_at);
             $date_formatted = date_i18n( 'd.m.Y H:i:s', $timestamp );
             
             $status_class = 'status-default';
-            if ( $data['status'] === 'completed' ) {
+            if ( $order_status === 'completed' ) {
                 $status_class = 'status-completed';
-            } elseif ( $data['status'] === 'processing' ) {
+            } elseif ( $order_status === 'processing' ) {
                 $status_class = 'status-processing';
             }
             ?>
             <div class="at-rest-revision-item">
-                <input type="checkbox" id="revision-toggle-<?php echo esc_attr( $timestamp ); ?>" class="revision-toggle" />
+                <input type="checkbox" id="revision-toggle-<?php echo esc_attr( $revision_id ); ?>" class="revision-toggle" />
                 
-                <label for="revision-toggle-<?php echo esc_attr( $timestamp ); ?>" class="at-rest-revision-header">
+                <label for="revision-toggle-<?php echo esc_attr( $revision_id ); ?>" class="at-rest-revision-header">
                     <div class="revision-header-content">
                         <span class="revision-date">
                             <?php echo esc_html__( 'Archive at:', 'at-rest-order-log' ); ?> 
                             <?php echo esc_html( $date_formatted ); ?>
                         </span>
                         <span class="revision-status <?php echo esc_attr( $status_class ); ?>">
-                            <?php echo esc_html( wc_get_order_status_name( $data['status'] ) ); ?>
+                            <?php echo esc_html( wc_get_order_status_name( $order_status ) ); ?>
                         </span>
                     </div>
                     <span class="at-rest-revision-toggle-icon"></span>
                 </label>
                 
                 <div class="at-rest-revision-content">
-                    <?php if ( ! empty( $data['user_id'] ) ) { 
-                        $user = get_userdata( $data['user_id'] );
+                    <?php if ( ! empty( $user_id ) ) { 
+                        $user = get_userdata( $user_id );
                         if ( $user ) {
                     ?>
                         <div class="revision-user-info">

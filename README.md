@@ -8,21 +8,34 @@ WordPress plugin for tracking WooCommerce order changes with automatic revision 
 
 The plugin automatically creates revision snapshots of WooCommerce orders before they are updated. Each revision includes:
 
--   **Order data**: status, items, quantities, prices, totals
--   **Customer information**: billing and shipping addresses
+-   **Order data**: status, items, quantities, prices, totals, fees
+-   **Customer information**: billing address
 -   **Metadata**: all custom order meta fields
 -   **User tracking**: which admin user made the changes
 -   **Timestamp**: when the revision was created
+
+**Storage:**
+
+-   Revisions are stored in a dedicated database table `wp_order_revisions` (not as order meta data)
+-   This provides better performance and scalability for orders with many revisions
+-   Displays the **20 most recent revisions** to avoid large queries and maintain fast page load times
+-   Future improvement may include pagination if needed
+
+**Data Cleanup:**
+
+-   All revision data is **permanently deleted** when the plugin is uninstalled
+-   Data is preserved during deactivation
 
 Revisions are displayed in a dedicated meta box on the order edit screen with a collapsible interface for easy review of historical changes.
 
 **Key Features:**
 
--   Automatic revision creation on order save
--   View revision history directly in order edit screen
+-   Automatic revision creation when clicking "Update" button
+-   View last 20 revisions directly in order edit screen
 -   See revision count in orders list table
 -   Prevent editing of paid orders
 -   Track which user made each change
+-   Dedicated database table for optimal performance
 
 **Location:**
 
@@ -39,8 +52,8 @@ Revisions are displayed in a dedicated meta box on the order edit screen with a 
 
 -   Revisions are created **only for unpaid orders**
 -   Paid orders cannot be edited (controlled by `woocommerce_order_is_editable` filter)
--   Revisions trigger on manual order edits through admin panel
--   AJAX and autosave operations are excluded from revision creation
+-   Revisions are saved **only when clicking "Update" button** in admin panel
+-   AJAX updates and autosave operations do NOT create revisions (intentional design choice)
 
 ---
 
@@ -73,7 +86,7 @@ Revisions are displayed in a dedicated meta box on the order edit screen with a 
     - Try to edit order - fields that affect price should be read-only (except refund operations)
     - For testing: you can change the payment author (this field remains editable)
     - Verify no new revisions are created after payment
-    - Try to change status again - this change will NOT be recorded as a revision because the previous order version was already paid
+    - Try to change status again - this change will **NOT be recorded as a revision** because the previous order version was already paid
 
 4. **Orders list column:**
 
@@ -100,3 +113,7 @@ Revisions are displayed in a dedicated meta box on the order edit screen with a 
 ### Version 1.0.1 - 2025-11-20
 
     * add fees
+
+### Version 1.1.0 - 2025-11-21
+
+    * New storage system
