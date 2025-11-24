@@ -9,15 +9,57 @@ class OrderUpdateHandler {
         $this->order_manager = $order_manager;
         
         add_action( 'woocommerce_process_shop_order_meta', [$this, 'createRevisionBeforeUpdate'], 1, 2 );
+        add_action( 'woocommerce_before_save_order_items', [$this, 'createRevisionBeforeItemsSave'], 1, 2 );
+        add_action( 'woocommerce_before_delete_order_item', [$this, 'createRevisionBeforeItemDelete'], 1, 1 );
+        add_action( 'wp_ajax_woocommerce_add_order_fee', [$this, 'createRevisionBeforeAddFee'], 1 );
+    }
+    
+    public function createRevisionBeforeAddFee() {
+        if ( ! isset( $_POST['order_id'] ) ) {
+            return;
+        }
+        
+        $order_id = absint( $_POST['order_id'] );
+        
+        if ( ! $this->isAjaxItemsUpdate( $order_id ) ) {
+            return;
+        }
+        
+        $this->processRevision( $order_id );
     }
 
     public function createRevisionBeforeUpdate( $order_id, $post = null ) {
-    
-        
         if ( ! $this->isUpdateButtonClicked( $order_id ) ) {
             return;
         }
 
+        $this->processRevision( $order_id );
+    }
+    
+    public function createRevisionBeforeItemsSave( $order_id, $items ) {
+        if ( ! $this->isAjaxItemsUpdate( $order_id ) ) {
+            return;
+        }
+        
+        $this->processRevision( $order_id );
+    }
+    
+    public function createRevisionBeforeItemDelete( $item_id ) {
+        global $wpdb;
+        
+        $order_id = $wpdb->get_var( $wpdb->prepare(
+            "SELECT order_id FROM {$wpdb->prefix}woocommerce_order_items WHERE order_item_id = %d",
+            $item_id
+        ) );
+        
+        if ( ! $order_id ) {
+            return;
+        }
+        
+        if ( ! $this->isAjaxItemsUpdate( $order_id ) ) {
+            return;
+        }
+        
         $this->processRevision( $order_id );
     }
 
@@ -93,6 +135,35 @@ class OrderUpdateHandler {
             return false;
         }
     
+        return true;
+    }
+    
+    private function isAjaxItemsUpdate( $order_id ) : bool {
+        if ( ! $order_id ) {
+            return false;
+        }
+        
+        if ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) {
+            return false;
+        }
+        
+        if ( ! current_user_can( 'edit_post', $order_id ) ) {
+            return false;
+        }
+        
+        if ( isset($_GET['action']) && $_GET['action'] === 'atrest_resend_invoice_pdf' ) {
+            return false;
+        }
+        
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) {
+            return false;
+        }
+        
+        if ( $order->is_paid() ) {
+            return false;
+        }
+        
         return true;
     }
 }

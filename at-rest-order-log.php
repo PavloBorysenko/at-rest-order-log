@@ -2,7 +2,7 @@
 /**
  * Plugin Name: At Rest Order Log
  * Description: A plugin to log order changes
- * Version: 1.0.1
+ * Version: 1.1.1
  * Author: Na-Gora
  */
 
@@ -23,7 +23,7 @@ function at_rest_order_log_activate() {
     $database->createTable();
     
     // Save plugin version for future updates
-    update_option('at_rest_order_log_version', '1.0.1');
+    update_option('at_rest_order_log_version', '1.1.1');
 }
 
 $order_revision_database = new \Supernova\AtRestOrderLog\OrderRevisionDatabase();

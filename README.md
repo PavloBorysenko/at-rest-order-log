@@ -117,3 +117,7 @@ Revisions are displayed in a dedicated meta box on the order edit screen with a 
 ### Version 1.1.0 - 2025-11-21
 
     * New storage system
+
+### Version 1.1.1 - 2025-11-24
+
+    * Add ajax support
